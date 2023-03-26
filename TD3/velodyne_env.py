@@ -10,6 +10,7 @@ import rospy
 import sensor_msgs.point_cloud2 as pc2
 from gazebo_msgs.msg import ModelState
 from geometry_msgs.msg import Twist
+from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import PointCloud2
 from squaternion import Quaternion
@@ -112,7 +113,7 @@ class GazeboEnv:
         self.last_odom = None
 
         self.set_self_state = ModelState()
-        self.set_self_state.model_name = "r1"
+        self.set_self_state.model_name = "turtlebot3_waffle"
         self.set_self_state.pose.position.x = 0.0
         self.set_self_state.pose.position.y = 0.0
         self.set_self_state.pose.position.z = 0.0
@@ -146,7 +147,7 @@ class GazeboEnv:
         print("Gazebo launched!")
 
         # Set up the ROS publishers and subscribers
-        self.vel_pub = rospy.Publisher("/r1/cmd_vel", Twist, queue_size=1)
+        self.vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
         self.set_state = rospy.Publisher(
             "gazebo/set_model_state", ModelState, queue_size=10
         )
@@ -159,9 +160,28 @@ class GazeboEnv:
         self.velodyne = rospy.Subscriber(
             "/velodyne_points", PointCloud2, self.velodyne_callback, queue_size=1
         )
-        self.odom = rospy.Subscriber(
-            "/r1/odom", Odometry, self.odom_callback, queue_size=1
+        self.velodyne = rospy.Subscriber(
+            "/scan", LaserScan, self.laserscan_callback, queue_size=1
         )
+        self.odom = rospy.Subscriber(
+            "/odom", Odometry, self.odom_callback, queue_size=1
+        )
+
+    # Read velodyne pointcloud and turn it into distance data, then select the minimum value for each angle
+    # range as state representation
+    def laserscan_callback(self, scan):
+        scan_range = []
+
+        for i in range(len(scan.ranges)):
+            if scan.ranges[i] == float('Inf'):
+                scan_range.append(6)
+            elif np.isnan(scan.ranges[i]):
+                scan_range.append(0)
+            else:
+                scan_range.append(scan.ranges[i])
+
+        self.velodyne_data = scan_range[:]
+                
 
     # Read velodyne pointcloud and turn it into distance data, then select the minimum value for each angle
     # range as state representation
@@ -214,6 +234,7 @@ class GazeboEnv:
         # read velodyne laser state
         done, collision, min_laser = self.observe_collision(self.velodyne_data)
         v_state = []
+        # print(self.velodyne_data[:])
         v_state[:] = self.velodyne_data[:]
         laser_state = [v_state]
 

@@ -9,3 +9,4 @@ catkin_ws/build/
 *.npy
 
 TD3/runs/
+results/
