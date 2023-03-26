@@ -7,3 +7,6 @@
 [submodule "catkin_ws/src/turtlebot3_machine_learning"]
 	path = catkin_ws/src/turtlebot3_machine_learning
 	url = https://github.com/ROBOTIS-GIT/turtlebot3_machine_learning.git
+[submodule "catkin_ws/src/turtlebot3_msgs"]
+	path = catkin_ws/src/turtlebot3_msgs
+	url = https://github.com/ROBOTIS-GIT/turtlebot3_msgs.git
